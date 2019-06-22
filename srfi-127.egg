@@ -1,0 +1,11 @@
+;; -*- Scheme -*-
+
+((synopsis "SRFI-127: Lazy Sequences")
+ (license "BSD")
+ (category data)
+ (test-dependencies test)
+ (author "John Cowan")
+ (maintainer "Ivan Raikov")
+ (components (extension srfi-127
+                        (source "lseqs/lseqs.scm")))
+ )

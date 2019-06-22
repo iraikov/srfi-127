@@ -1,5 +1,5 @@
-(use test)
-(use srfi-127)
+(import test)
+(import srfi-127)
 (include "../lseqs/r7rs-shim.scm")
 
 ;; Make-generator for tests cloned from SRFI 121
@@ -14,10 +14,19 @@
 (define (make-lseq . args) (generator->lseq (apply make-generator args)))
 
 
+(define one23 (make-lseq 1 2 3))
+(define one23abc (lseq-append (make-lseq 1 2 3) (make-lseq 'a 'b 'c)))
+(define one2345 (make-lseq 1 2 3 4 5))
+(define oddeven (make-lseq 'odd 'even 'odd 'even 'odd 'even 'odd 'even))
+
+(define (factorial n)
+  (cond
+   ((< n 0) #f)
+   ((= n 0) 1)
+   (else (* n (factorial (- n 1))))))
 
 (test-group "lseqs"
   (test-group "lseqs/constructor"
-    (define one23 (make-lseq 1 2 3))
     (test 1 (car one23))
     (test-assert (procedure? (cdr one23)))
     (test '(1 2 3) (lseq-realize one23))
@@ -83,14 +92,12 @@
     (test '() (lseq-realize (make-lseq)))
     (test '(1 2 3) (lseq-realize (make-lseq 1 2 3)))
 
-    (define g (lseq->generator '(1 2 3)))
-    (begin
+    (let ((g (lseq->generator '(1 2 3))))
       (test 1 (g))
       (test 2 (g))
       (test 3 (g))
       (test-assert (eof-object? (g))))
-    (define g (lseq->generator (make-lseq 1 2 3)))
-    (begin
+    (let ((g (lseq->generator (make-lseq 1 2 3))))
       (test 1 (g))
       (test 2 (g))
       (test 3 (g))
@@ -101,12 +108,9 @@
     (test 3 (lseq-length (make-lseq 1 2 3)))
 
     (test '(1 2 3 a b c) (lseq-realize (lseq-append '(1 2 3) '(a b c))))
-    (define one23abc (lseq-append (make-lseq 1 2 3) (make-lseq 'a 'b 'c)))
     (test-assert (procedure? (cdr one23abc)))
     (test-assert (lseq-realize one23abc))
 
-    (define one2345 (make-lseq 1 2 3 4 5))
-    (define oddeven (make-lseq 'odd 'even 'odd 'even 'odd 'even 'odd 'even))
     (test '((one 1 odd) (two 2 even) (three 3 odd))
           (lseq-realize (lseq-zip '(one two three) one2345 oddeven)))
   ) ; end lseqs/whole
@@ -117,27 +121,27 @@
     (test '(-1 -2 -3) (lseq-realize (lseq-map - (make-lseq 1 2 3))))
     (test-assert (procedure? (cdr (lseq-map - '(1 2 3)))))
 
-    (define output '())
-    (define out! (lambda (x) (set! output (cons x output))))
-    (lseq-for-each out! '())
-    (test output '())
-    (lseq-for-each out! '(a b c))
-    (test output '(c b a))
-    (lseq-for-each out! (make-lseq 1 2 3))
-    (test output '(3 2 1 c b a))
+    (let* ((output '())
+           (out! (lambda (x) (set! output (cons x output)))))
+      (lseq-for-each out! '())
+      (test output '())
+      (lseq-for-each out! '(a b c))
+      (test output '(c b a))
+      (lseq-for-each out! (make-lseq 1 2 3))
+      (test output '(3 2 1 c b a)))
 
     (test '() (lseq-filter odd? '()))
-    (define odds (lseq-filter odd? '(1 2 3 4 5)))
-    (test-assert (procedure? (cdr odds)))
-    (test '(1 3 5) (lseq-realize odds))
-    (test '(1 3 5) (lseq-realize (lseq-filter odd? (make-lseq 1 2 3 4 5))))
+    (let ((odds (lseq-filter odd? '(1 2 3 4 5))))
+      (test-assert (procedure? (cdr odds)))
+      (test '(1 3 5) (lseq-realize odds))
+      (test '(1 3 5) (lseq-realize (lseq-filter odd? (make-lseq 1 2 3 4 5)))))
 
     (test '() (lseq-remove even? '()))
-    (define odds (lseq-remove even? '(1 2 3 4 5)))
-    (test-assert (procedure? (cdr odds)))
-    (test '(1 3 5) (lseq-realize odds))
-    (test '(1 3 5) (lseq-realize (lseq-remove even? (make-lseq 1 2 3 4 5))))
-
+    (let ((odds (lseq-remove even? '(1 2 3 4 5))))
+      (test-assert (procedure? (cdr odds)))
+      (test '(1 3 5) (lseq-realize odds))
+      (test '(1 3 5) (lseq-realize (lseq-remove even? (make-lseq 1 2 3 4 5)))))
+      
   ) ; end lseqs/mapping
 
   (test-group "lseqs/searching"
@@ -166,11 +170,6 @@
     (test #f (lseq-any integer? '(a 3.1 b 2.7)))
     (test #f (lseq-any integer? (make-lseq 'a 3.1 'b 2.7)))
     (test #t (lseq-any < '(3 1 4 1 5) '(2 7 1 8 2)))
-    (define (factorial n)
-      (cond
-        ((< n 0) #f)
-        ((= n 0) 1)
-        (else (* n (factorial (- n 1))))))
     (test 6 (lseq-any factorial '(-1 -2 3 4)))
     (test 6 (lseq-any factorial (make-lseq -1 -2 3 4)))
 
