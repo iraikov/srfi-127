@@ -145,10 +145,24 @@
 ;; Zip cars of lseqs into a list and return an lseq of those lists
 (define (lseq-zip . lseqs) (apply lseq-map list lseqs))
 
-;; Eagerly apply a proc to the elements of lseqs
-;; Included because it's a common operation, even though it is trivial
-(define (lseq-for-each proc . lseqs)
-  (apply for-each proc (map lseq-realize lseqs)))
+;; Lazily apply a proc to the elements of lseqs
+(define lseq-for-each
+  (case-lambda
+    ((proc lseq)              ; 1-sequence fast path
+     (let loop ((lseq lseq))
+       (if (null? lseq)
+         (begin)
+         (begin
+          (proc (lseq-car lseq))
+          (loop (lseq-cdr lseq))))))
+    ((proc . lseqs)           ; variadic path
+     (let loop ((lseqs lseqs))
+       (if (any-null? lseqs)
+         (begin)
+         (begin
+          (apply proc (map lseq-car lseqs))
+          (loop (map lseq-cdr lseqs))))))))
+
 
 ;; Filter an lseq lazily to include only elements that satisfy pred
 (define (lseq-filter pred lseq)
